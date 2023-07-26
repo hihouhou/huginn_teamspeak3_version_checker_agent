@@ -115,22 +115,22 @@ module Agents
       payload = JSON.parse(response.body)
 
       if interpolated['changes_only'] == 'true'
-        if payload.to_s != memory['last_status']
+        if payload != memory['last_status']
           if payload
             if "#{memory['last_status']}" == ''
               payload.each do |os,arch|
                 arch.each do |version,data|
                   if os == interpolated['os'] && version == interpolated['arch']
-                    data['type'] = interpolated['type']
-                    data['os'] = os
-                    data['arch'] = version
-                    create_event payload: data
+                    event_created = data.dup
+                    event_created['type'] = interpolated['type']
+                    event_created['os'] = os
+                    event_created['arch'] = version
+                    create_event payload: event_created
                   end
                 end
               end
             else
-              last_status = memory['last_status'].gsub("=>", ": ").gsub(":nil,", ": null,")
-              last_status = JSON.parse(last_status)
+              last_status = memory['last_status']
               payload.each do |os,arch|
                 found = false
                 arch.each do |version,data|
@@ -148,10 +148,11 @@ module Agents
                     if interpolated['debug'] == 'true'
                       log "found is #{found}! so event created"
                     end
-                    data['type'] = interpolated['type']
-                    data['os'] = os
-                    data['arch'] = version
-                    create_event payload: data
+                    event_created = data.dup
+                    event_created['type'] = interpolated['type']
+                    event_created['os'] = os
+                    event_created['arch'] = version
+                    create_event payload: event_created
                   else
                     if interpolated['debug'] == 'true'
                       log "found is #{found}! so nothing created"
@@ -161,11 +162,11 @@ module Agents
               end
             end
           end
-          memory['last_status'] = payload.to_s
+          memory['last_status'] = payload
         end
       else
-        if payload.to_s != memory['last_status']
-          memory['last_status'] = payload.to_s
+        if payload != memory['last_status']
+          memory['last_status'] = payload
         end
         create_event payload: payload
       end
